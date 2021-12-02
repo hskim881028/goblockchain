@@ -5,14 +5,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/hskim881028/goblockchain/blockchain"
+	"github.com/hskim881028/goblockchain/utility"
 )
 
 const port string = ":4000"
 
 type URL string
 
+type AddBlockBody struct {
+	Message string
+}
+
 func (u URL) MarshalText() ([]byte, error) {
-	url := fmt.Sprintf("htpp://localhost%s%s", port, u)
+	url := fmt.Sprintf("http://localhost%s%s", port, u)
 	return []byte(url), nil
 }
 
@@ -32,11 +39,17 @@ func documentation(rw http.ResponseWriter, r *http.Request) {
 		},
 		{
 			URL:         URL("/blocks"),
+			Method:      "GET",
+			Description: "Get all blocks",
+		},
+		{
+			URL:         URL("/blocks"),
 			Method:      "POST",
 			Description: "Add a block",
 			Payload:     "data:string",
 		},
 	}
+
 	rw.Header().Add("Content-Type", "application/json")
 	// b, err := json.Marshal(data)
 	// utility.HandleErr(err)
@@ -45,8 +58,23 @@ func documentation(rw http.ResponseWriter, r *http.Request) {
 
 }
 
+func blocks(rw http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		rw.Header().Add("Content-Type", "application/json")
+		json.NewEncoder(rw).Encode(blockchain.GetBlcokchain().AllBlocks())
+	case "POST":
+		var addBlockBody AddBlockBody
+		utility.HandleErr(json.NewDecoder(r.Body).Decode(&addBlockBody))
+		blockchain.GetBlcokchain().AddBlock(addBlockBody.Message)
+		rw.WriteHeader(http.StatusCreated)
+	}
+
+}
+
 func main() {
 	http.HandleFunc("/", documentation)
+	http.HandleFunc("/blocks", blocks)
 	fmt.Printf("Listening on Http://localhost%s", port)
 	log.Fatal(http.ListenAndServe(port, nil))
 }
