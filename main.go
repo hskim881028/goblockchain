@@ -1,9 +1,7 @@
 package main
 
-import (
-	"github.com/hskim881028/goblockchain/rest"
-)
+import "github.com/hskim881028/goblockchain/cli"
 
 func main() {
-	rest.Start(4000)
+	cli.Start()
 }

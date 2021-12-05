@@ -10,9 +10,9 @@ import (
 )
 
 var templates *template.Template
+var port string
 
 const (
-	port        string = ":4000"
 	templateDir string = "explorer/templates/"
 )
 
@@ -38,7 +38,8 @@ func add(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Start() {
+func Start(aPort int) {
+	port = fmt.Sprintf(":%d", aPort)
 	templates = template.Must(template.ParseGlob(templateDir + "pages/*.gohtml"))
 	templates = template.Must(templates.ParseGlob(templateDir + "partials/*.gohtml"))
 
