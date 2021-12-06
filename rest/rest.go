@@ -73,11 +73,11 @@ func jsonContentTypeMiddleware(next http.Handler) http.Handler {
 func blocks(rw http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		json.NewEncoder(rw).Encode(blockchain.GetBlcokchain().AllBlocks())
+		json.NewEncoder(rw).Encode(blockchain.Blcokchain().AllBlocks())
 	case "POST":
 		var addBlockBody addBlockBody
 		utility.HandleErr(json.NewDecoder(r.Body).Decode(&addBlockBody))
-		blockchain.GetBlcokchain().AddBlock(addBlockBody.Message)
+		blockchain.Blcokchain().AddBlock(addBlockBody.Message)
 		rw.WriteHeader(http.StatusCreated)
 	}
 }
@@ -86,7 +86,7 @@ func block(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	height, err := strconv.Atoi(vars["height"])
 	utility.HandleErr(err)
-	block, err := blockchain.GetBlcokchain().GetBlock(height)
+	block, err := blockchain.Blcokchain().GetBlock(height)
 	encoder := json.NewEncoder(rw)
 	if err == blockchain.ErrNotFound {
 		encoder.Encode(errorResponse{fmt.Sprint(err)})
