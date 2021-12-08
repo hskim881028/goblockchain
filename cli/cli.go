@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 
 	explorer "github.com/hskim881028/goblockchain/explorer/templates"
 	"github.com/hskim881028/goblockchain/rest"
@@ -14,7 +15,7 @@ func usage() {
 	fmt.Printf("Plase use the following flags:\n\n")
 	fmt.Printf("-port : Set the PORT of the server\n")
 	fmt.Printf("-moode : Choose between 'rest' and 'html'\n\n")
-	os.Exit(0)
+	runtime.Goexit()
 }
 
 func Start() {

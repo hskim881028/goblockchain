@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/hskim881028/goblockchain/blockchain"
@@ -73,22 +72,23 @@ func jsonContentTypeMiddleware(next http.Handler) http.Handler {
 func blocks(rw http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		json.NewEncoder(rw).Encode(blockchain.Blcokchain().AllBlocks())
+		json.NewEncoder(rw).Encode(blockchain.Blcokchain().Blocks())
+		return
 	case "POST":
 		var addBlockBody addBlockBody
 		utility.HandleErr(json.NewDecoder(r.Body).Decode(&addBlockBody))
 		blockchain.Blcokchain().AddBlock(addBlockBody.Message)
 		rw.WriteHeader(http.StatusCreated)
+		return
 	}
 }
 
 func block(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	height, err := strconv.Atoi(vars["height"])
-	utility.HandleErr(err)
-	block, err := blockchain.Blcokchain().GetBlock(height)
+	hash := vars["hash"]
+	block, err := blockchain.FindBlock(hash)
 	encoder := json.NewEncoder(rw)
-	if err == blockchain.ErrNotFound {
+	if err == blockchain.ErrorNotFound {
 		encoder.Encode(errorResponse{fmt.Sprint(err)})
 	} else {
 		encoder.Encode(block)
@@ -101,7 +101,7 @@ func Start(aPort int) {
 	router.Use(jsonContentTypeMiddleware)
 	router.HandleFunc("/", documentation).Methods("GET")
 	router.HandleFunc("/blocks", blocks).Methods("GET", "POST")
-	router.HandleFunc("/blocks/{height:[0-9]+}", block).Methods("GET")
+	router.HandleFunc("/blocks/{hash:[a-f0-9]+}", block).Methods("GET")
 	fmt.Printf("Listening on Http://localhost%s", port)
 	log.Fatal(http.ListenAndServe(port, router))
 }
