@@ -5,7 +5,6 @@ http://localhost:4000/status
 http://localhost:4000/blocks
 ###
 POST http://localhost:4000/blocks
-
 {
     "message" : "Data for my block"
 }
@@ -15,3 +14,13 @@ http://localhost:4000/blocks/1
 
 ###
 http://localhost:4000/blocks/44df06a8fc593232f6fa4027b4b82b0ee61fa28e4b0e3d2a47186751d8248acb
+
+###
+http://localhost:4000/balance/hskim
+
+###
+POST http://localhost:4000/transactions
+{
+    "to" : "tester",
+    "amount" : 99
+}
