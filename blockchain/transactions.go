@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/hskim881028/goblockchain/utility"
+	"github.com/hskim881028/goblockchain/wallet"
 )
 
 const (
@@ -19,14 +20,14 @@ type Tx struct {
 }
 
 type TxIn struct {
-	TxID  string `json:"txId"`
-	Index int    `json:"index"`
-	Owner string `json:"owner"`
+	TxID      string `json:"txId"`
+	Index     int    `json:"index"`
+	Signature string `json:"signature"`
 }
 
 type TxOut struct {
-	Owner  string `json:"owner"`
-	Amount int    `json:"amount"`
+	Address string `json:"address"`
+	Amount  int    `json:"amount"`
 }
 
 type UTxOut struct {
@@ -40,13 +41,39 @@ type mempool struct {
 }
 
 var Mempool *mempool = &mempool{}
+var ErrorNoCoin = errors.New("not enough coin")
+var ErrorInvalid = errors.New("Tx invalid")
 
 func (t *Tx) getID() {
 	t.ID = utility.Hash(t)
 }
 
+func (t *Tx) sign() {
+	for _, txIn := range t.TxIns {
+		txIn.Signature = wallet.Sign(t.ID, wallet.Wallet())
+	}
+}
+
+func validate(tx *Tx) bool {
+	valid := true
+	for _, txIn := range tx.TxIns {
+		prevTx := FindTx(Blcokchain(), txIn.TxID)
+		if prevTx == nil {
+			valid = false
+			break
+		}
+		address := prevTx.TxOuts[txIn.Index].Address
+		valid := wallet.Verify(txIn.Signature, address, tx.ID)
+		if !valid {
+			break
+		}
+	}
+	return valid
+
+}
+
 func (m *mempool) AddTx(to string, amount int) error {
-	tx, err := makeTx("hskim", to, amount)
+	tx, err := makeTx(wallet.Wallet().Address, to, amount)
 	if err != nil {
 		return err
 	}
@@ -55,7 +82,7 @@ func (m *mempool) AddTx(to string, amount int) error {
 }
 
 func (m *mempool) TxToConfirm() []*Tx {
-	coinbase := makeCoinbaseTx("hskim")
+	coinbase := makeCoinbaseTx(wallet.Wallet().Address)
 	txs := m.Txs
 	txs = append(txs, coinbase)
 	m.Txs = nil
@@ -81,7 +108,7 @@ func makeCoinbaseTx(address string) *Tx {
 
 func makeTx(from, to string, amount int) (*Tx, error) {
 	if BalanceByAddress(Blcokchain(), from) < amount {
-		return nil, errors.New("not enough coin")
+		return nil, ErrorNoCoin
 	}
 
 	var txOuts []*TxOut
@@ -105,6 +132,11 @@ func makeTx(from, to string, amount int) (*Tx, error) {
 	txOuts = append(txOuts, txOut)
 	tx := &Tx{"", int(time.Now().Unix()), txIns, txOuts}
 	tx.getID()
+	tx.sign()
+	valid := validate(tx)
+	if !valid {
+		return nil, ErrorInvalid
+	}
 	return tx, nil
 }
 

@@ -1,8 +1,6 @@
 package db
 
 import (
-	"fmt"
-
 	"github.com/boltdb/bolt"
 	"github.com/hskim881028/goblockchain/utility"
 )
@@ -20,26 +18,25 @@ func DB() *bolt.DB {
 	if db == nil {
 		dbPointer, err := bolt.Open(dbName, 0060, nil)
 		db = dbPointer
-		utility.HandleErr(err)
+		utility.HandleError(err)
 		err = db.Update(func(t *bolt.Tx) error {
 			_, err := t.CreateBucketIfNotExists([]byte(dataBucket))
-			utility.HandleErr(err)
+			utility.HandleError(err)
 			_, err = t.CreateBucketIfNotExists([]byte(blocksBucket))
 			return err
 		})
-		utility.HandleErr(err)
+		utility.HandleError(err)
 	}
 	return db
 }
 
 func SaveBlock(hash string, data []byte) {
-	fmt.Printf("Save block\n hash : %s\n data : %b", hash, data)
 	err := DB().Update(func(t *bolt.Tx) error {
 		bucket := t.Bucket([]byte(blocksBucket))
 		err := bucket.Put([]byte(hash), data)
 		return err
 	})
-	utility.HandleErr(err)
+	utility.HandleError(err)
 }
 
 func SaveBlockChain(data []byte) {
@@ -48,7 +45,7 @@ func SaveBlockChain(data []byte) {
 		err := bucket.Put([]byte(checkpoint), data)
 		return err
 	})
-	utility.HandleErr(err)
+	utility.HandleError(err)
 }
 
 func CheckPoint() []byte {
