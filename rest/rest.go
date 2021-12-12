@@ -127,7 +127,7 @@ func balance(rw http.ResponseWriter, r *http.Request) {
 		amount := blockchain.Blcokchain().BalanceByAddress(address)
 		json.NewEncoder(rw).Encode(balanceResponse{address, amount})
 	default:
-		utility.HandleErr(json.NewEncoder(rw).Encode(blockchain.Blcokchain().TxOutsByAddress(address)))
+		utility.HandleErr(json.NewEncoder(rw).Encode(blockchain.Blcokchain().UTxOutsByAddress(address)))
 	}
 }
 
