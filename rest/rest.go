@@ -92,7 +92,7 @@ func jsonContentTypeMiddleware(next http.Handler) http.Handler {
 func blocks(rw http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		utility.HandleErr(json.NewEncoder(rw).Encode(blockchain.Blcokchain().Blocks()))
+		utility.HandleErr(json.NewEncoder(rw).Encode(blockchain.Blocks(blockchain.Blcokchain())))
 		return
 	case "POST":
 		blockchain.Blcokchain().AddBlock()
@@ -124,10 +124,10 @@ func balance(rw http.ResponseWriter, r *http.Request) {
 
 	switch total {
 	case "true":
-		amount := blockchain.Blcokchain().BalanceByAddress(address)
+		amount := blockchain.BalanceByAddress(blockchain.Blcokchain(), address)
 		json.NewEncoder(rw).Encode(balanceResponse{address, amount})
 	default:
-		utility.HandleErr(json.NewEncoder(rw).Encode(blockchain.Blcokchain().UTxOutsByAddress(address)))
+		utility.HandleErr(json.NewEncoder(rw).Encode(blockchain.UTxOutsByAddress(blockchain.Blcokchain(), address)))
 	}
 }
 

@@ -80,16 +80,16 @@ func makeCoinbaseTx(address string) *Tx {
 }
 
 func makeTx(from, to string, amount int) (*Tx, error) {
-	if Blcokchain().BalanceByAddress(from) < amount {
+	if BalanceByAddress(Blcokchain(), from) < amount {
 		return nil, errors.New("not enough coin")
 	}
 
 	var txOuts []*TxOut
 	var txIns []*TxIn
 	total := 0
-	uTxOuts := Blcokchain().UTxOutsByAddress(from)
+	uTxOuts := UTxOutsByAddress(Blcokchain(), from)
 	for _, uTxOut := range uTxOuts {
-		if total > amount {
+		if total >= amount {
 			break
 		}
 		txIn := &TxIn{uTxOut.TxID, uTxOut.Index, from}
