@@ -1,3 +1,4 @@
+// Package utility contains functions to be used across the application.
 package utility
 
 import (
@@ -28,6 +29,7 @@ func FromBytes(i interface{}, data []byte) {
 	HandleError(decoder.Decode(i))
 }
 
+// Hash takes an interface, hashes it and returns the hex encoding the data to the interface.
 func Hash(i interface{}) string {
 	s := fmt.Sprintf("%v", i)
 	hash := sha256.Sum256([]byte(s))
