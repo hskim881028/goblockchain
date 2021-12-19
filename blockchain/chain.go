@@ -1,7 +1,8 @@
 package blockchain
 
 import (
-	"fmt"
+	"encoding/json"
+	"net/http"
 	"sync"
 
 	"github.com/hskim881028/goblockchain/db"
@@ -12,6 +13,7 @@ type blockchain struct {
 	NewestHash        string `json:"newestHash"`
 	Height            int    `json:"height"`
 	CurrentDifficulty int    `json:"currentDifficulty"`
+	m                 sync.Mutex
 }
 
 const (
@@ -28,16 +30,52 @@ func (b *blockchain) restore(data []byte) {
 	utility.FromBytes(b, data)
 }
 
-func (b *blockchain) AddBlock() {
+func (b *blockchain) AddBlock() *Block {
 	block := createBlock(b.NewestHash, b.Height+1, getDifficulty(b))
 	b.NewestHash = block.Hash
 	b.Height = block.Height
 	b.CurrentDifficulty = block.Difficulty
 	persistBlockChain(b)
+	return block
+}
+
+func (b *blockchain) Replace(newBlocks []*Block) {
+	b.m.Lock()
+	defer b.m.Unlock()
+
+	b.CurrentDifficulty = newBlocks[0].Difficulty
+	b.NewestHash = newBlocks[0].Hash
+	b.Height = len(newBlocks)
+
+	persistBlockChain(b)
+	db.ClearBlock()
+	for _, block := range newBlocks {
+		persistBlock(block)
+	}
+}
+
+func (b *blockchain) AddPeerBlock(newBlock *Block) {
+	b.m.Lock()
+	m.m.Lock()
+	defer b.m.Unlock()
+	defer m.m.Unlock()
+
+	b.Height += 1
+	b.NewestHash = newBlock.Hash
+	b.CurrentDifficulty = newBlock.Difficulty
+
+	persistBlockChain(b)
+	persistBlock(newBlock)
+	for _, tx := range newBlock.Transactions {
+		_, ok := m.Txs[tx.ID]
+		if ok {
+			delete(m.Txs, tx.ID)
+		}
+	}
 }
 
 func persistBlockChain(b *blockchain) {
-	db.SaveBlockChain(utility.ToBytes(b))
+	db.SaveCheckpoint(utility.ToBytes(b))
 }
 
 func getDifficulty(b *blockchain) int {
@@ -123,7 +161,16 @@ func BalanceByAddress(b *blockchain, address string) int {
 	return amount
 }
 
+func Status(b *blockchain, rw http.ResponseWriter) {
+	b.m.Lock()
+	defer b.m.Unlock()
+	utility.HandleError(json.NewEncoder(rw).Encode(b))
+}
+
 func Blocks(b *blockchain) []*Block {
+	b.m.Lock()
+	defer b.m.Unlock()
+
 	var blocks []*Block
 	hashCursor := b.NewestHash
 	for {
@@ -138,20 +185,17 @@ func Blocks(b *blockchain) []*Block {
 	return blocks
 }
 
-func Blcokchain() *blockchain {
-	if b == nil {
-		once.Do(func() {
-			b = &blockchain{
-				Height: 0,
-			}
-			checkPoint := db.CheckPoint()
-			if checkPoint == nil {
-				b.AddBlock()
-			} else {
-				b.restore(checkPoint)
-			}
-		})
-	}
-	fmt.Println(b.NewestHash)
+func Blockchain() *blockchain {
+	once.Do(func() {
+		b = &blockchain{
+			Height: 0,
+		}
+		checkPoint := db.Checkpoint()
+		if checkPoint == nil {
+			b.AddBlock()
+		} else {
+			b.restore(checkPoint)
+		}
+	})
 	return b
 }

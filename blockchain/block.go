@@ -21,7 +21,7 @@ type Block struct {
 
 var ErrorNotFound = errors.New("block not found")
 
-func (b *Block) Persist() {
+func persistBlock(b *Block) {
 	db.SaveBlock(b.Hash, utility.ToBytes(b))
 }
 
@@ -52,8 +52,8 @@ func createBlock(prevHash string, height, difficulty int) *Block {
 		Nonce:      0,
 	}
 	block.mine()
-	block.Transactions = Mempool.TxToConfirm()
-	block.Persist()
+	block.Transactions = Mempool().TxToConfirm()
+	persistBlock(block)
 	return block
 }
 

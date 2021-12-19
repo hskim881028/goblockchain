@@ -1,12 +1,16 @@
 package db
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/hskim881028/goblockchain/utility"
 	bolt "go.etcd.io/bbolt"
 )
 
 const (
-	dbName       = "blockchain.db"
+	// dbName       = "blockchain.db"
+	dbName       = "blockchain"
 	dataBucket   = "data"
 	blocksBucket = "blocks"
 	checkpoint   = "checkpoint"
@@ -16,7 +20,7 @@ var db *bolt.DB
 
 func DB() *bolt.DB {
 	if db == nil {
-		dbPointer, err := bolt.Open(dbName, 0060, nil)
+		dbPointer, err := bolt.Open(getDbName(), 0060, nil)
 		db = dbPointer
 		utility.HandleError(err)
 		err = db.Update(func(t *bolt.Tx) error {
@@ -39,7 +43,7 @@ func SaveBlock(hash string, data []byte) {
 	utility.HandleError(err)
 }
 
-func SaveBlockChain(data []byte) {
+func SaveCheckpoint(data []byte) {
 	err := DB().Update(func(t *bolt.Tx) error {
 		bucket := t.Bucket([]byte(dataBucket))
 		err := bucket.Put([]byte(checkpoint), data)
@@ -48,7 +52,7 @@ func SaveBlockChain(data []byte) {
 	utility.HandleError(err)
 }
 
-func CheckPoint() []byte {
+func Checkpoint() []byte {
 	var data []byte
 	DB().View(func(t *bolt.Tx) error {
 		bucket := t.Bucket([]byte(dataBucket))
@@ -68,6 +72,21 @@ func GetBlock(hash string) []byte {
 	return data
 }
 
+func ClearBlock() {
+	DB().Update(func(t *bolt.Tx) error {
+		utility.HandleError(t.DeleteBucket([]byte(blocksBucket)))
+		_, err := t.CreateBucket([]byte(blocksBucket))
+		utility.HandleError(err)
+		return nil
+	})
+}
+
 func Close() {
 	DB().Close()
+}
+
+//for test
+func getDbName() string {
+	port := os.Args[2][6:]
+	return fmt.Sprintf("%s_%s.db", dbName, port)
 }

@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/hskim881028/goblockchain/utility"
@@ -37,10 +38,12 @@ type UTxOut struct {
 }
 
 type mempool struct {
-	Txs []*Tx
+	Txs map[string]*Tx
+	m   sync.Mutex
 }
 
-var Mempool *mempool = &mempool{}
+var m *mempool
+var memOnce sync.Once
 var ErrorNoCoin = errors.New("not enough coin")
 var ErrorInvalid = errors.New("Tx invalid")
 
@@ -57,7 +60,7 @@ func (t *Tx) sign() {
 func validate(tx *Tx) bool {
 	valid := true
 	for _, txIn := range tx.TxIns {
-		prevTx := FindTx(Blcokchain(), txIn.TxID)
+		prevTx := FindTx(Blockchain(), txIn.TxID)
 		if prevTx == nil {
 			valid = false
 			break
@@ -72,21 +75,30 @@ func validate(tx *Tx) bool {
 
 }
 
-func (m *mempool) AddTx(to string, amount int) error {
+func (m *mempool) AddTx(to string, amount int) (*Tx, error) {
 	tx, err := makeTx(wallet.Wallet().Address, to, amount)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	m.Txs = append(m.Txs, tx)
-	return nil
+	m.Txs[tx.ID] = tx
+	return tx, nil
 }
 
 func (m *mempool) TxToConfirm() []*Tx {
 	coinbase := makeCoinbaseTx(wallet.Wallet().Address)
-	txs := m.Txs
+	var txs []*Tx
+	for _, tx := range m.Txs {
+		txs = append(txs, tx)
+	}
 	txs = append(txs, coinbase)
-	m.Txs = nil
+	m.Txs = make(map[string]*Tx)
 	return txs
+}
+
+func (m *mempool) AddPeerTx(tx *Tx) {
+	m.m.Lock()
+	defer m.m.Unlock()
+	m.Txs[tx.ID] = tx
 }
 
 func makeCoinbaseTx(address string) *Tx {
@@ -107,14 +119,14 @@ func makeCoinbaseTx(address string) *Tx {
 }
 
 func makeTx(from, to string, amount int) (*Tx, error) {
-	if BalanceByAddress(Blcokchain(), from) < amount {
+	if BalanceByAddress(Blockchain(), from) < amount {
 		return nil, ErrorNoCoin
 	}
 
 	var txOuts []*TxOut
 	var txIns []*TxIn
 	total := 0
-	uTxOuts := UTxOutsByAddress(Blcokchain(), from)
+	uTxOuts := UTxOutsByAddress(Blockchain(), from)
 	for _, uTxOut := range uTxOuts {
 		if total >= amount {
 			break
@@ -141,7 +153,7 @@ func makeTx(from, to string, amount int) (*Tx, error) {
 }
 
 func isOnMempool(uTxOut *UTxOut) bool {
-	for _, tx := range Mempool.Txs {
+	for _, tx := range Mempool().Txs {
 		for _, input := range tx.TxIns {
 			if input.TxID == uTxOut.TxID && input.Index == uTxOut.Index {
 				return true
@@ -149,4 +161,11 @@ func isOnMempool(uTxOut *UTxOut) bool {
 		}
 	}
 	return false
+}
+
+func Mempool() *mempool {
+	memOnce.Do(func() {
+		m = &mempool{Txs: make(map[string]*Tx)}
+	})
+	return m
 }
