@@ -2,6 +2,7 @@ package utility
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -38,5 +39,47 @@ func TestToBytes(t *testing.T) {
 	k := reflect.TypeOf(b).Kind()
 	if k != reflect.Slice {
 		t.Errorf("ToBytes should return a slice of bytes got %s", k)
+	}
+}
+
+func TestSplitter(t *testing.T) {
+	type test struct {
+		input  string
+		sep    string
+		index  int
+		output string
+	}
+
+	tests := []test{
+		{"0:1:2", ":", 0, "0"},
+		{"0:1:2", ":", 1, "1"},
+		{"0:1:2", ":", 2, "2"},
+		{"0:1:2", ":", 3, ""},
+		{"0:1:2", "?", 0, "0:1:2"},
+	}
+
+	for _, tc := range tests {
+		result := Splitter(tc.input, tc.sep, tc.index)
+		if result != tc.output {
+			t.Errorf("Expected %s and get %s", tc.output, result)
+		}
+	}
+}
+
+func TestHandleErr(t *testing.T) {
+	preLogPanic := logPanic
+	defer func() {
+		logPanic = preLogPanic
+	}()
+
+	called := false
+	logPanic = func(v ...interface{}) {
+		called = true
+	}
+
+	err := errors.New("Test")
+	HandleError(err)
+	if !called {
+		t.Error("HandleError should call logPanic")
 	}
 }
