@@ -81,7 +81,7 @@ func TestToJson(t *testing.T) {
 	}
 
 	var restored testStruct
-	json.Unmarshal(b, restored)
+	json.Unmarshal(b, &restored)
 	if !reflect.DeepEqual(ts, restored) {
 		t.Error("ToJson should encode to JSON")
 	}
