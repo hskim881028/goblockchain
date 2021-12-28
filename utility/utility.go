@@ -31,6 +31,12 @@ func FromBytes(i interface{}, data []byte) {
 	HandleError(decoder.Decode(i))
 }
 
+func ToJson(i interface{}) []byte {
+	b, err := json.Marshal(i)
+	HandleError(err)
+	return b
+}
+
 // Hash takes an interface, hashes it and returns the hex encoding the data to the interface.
 func Hash(i interface{}) string {
 	s := fmt.Sprintf("%v", i)
@@ -44,10 +50,4 @@ func Splitter(s, sep string, i int) string {
 		return ""
 	}
 	return r[i]
-}
-
-func ToJson(i interface{}) []byte {
-	b, err := json.Marshal(i)
-	HandleError(err)
-	return b
 }
