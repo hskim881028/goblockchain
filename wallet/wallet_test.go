@@ -3,6 +3,8 @@ package wallet
 import (
 	"crypto/x509"
 	"encoding/hex"
+	"io/fs"
+	"reflect"
 	"testing"
 )
 
@@ -19,6 +21,22 @@ func makeTestWallet() *wallet {
 	w.privateKey = key
 	w.Address = aFromK(key)
 	return w
+}
+
+type fakeLayer struct {
+	fakeHasWalletFile func() bool
+}
+
+func (f fakeLayer) hasWalletFile() bool {
+	return f.fakeHasWalletFile()
+}
+
+func (fakeLayer) writeFile(name string, data []byte, perm fs.FileMode) error {
+	return nil
+}
+
+func (fakeLayer) readFile(name string) ([]byte, error) {
+	return x509.MarshalECPrivateKey(makeTestWallet().privateKey)
 }
 
 func TestSign(t *testing.T) {
@@ -52,5 +70,56 @@ func TestVerify(t *testing.T) {
 		if ok != tc.ok {
 			t.Error("Verify could not verify testSignature and testPayload")
 		}
+	}
+}
+
+func TestWallet(t *testing.T) {
+	t.Run("New wallet is created", func(t *testing.T) {
+		f = fakeLayer{
+			fakeHasWalletFile: func() bool {
+				return false
+			},
+		}
+		tw := Wallet()
+		if reflect.TypeOf(tw) != reflect.TypeOf(&wallet{}) {
+			t.Error("New wallet should return a new wallet instance")
+		}
+	})
+
+	t.Run("Wallet is restored", func(t *testing.T) {
+		f = fakeLayer{
+			fakeHasWalletFile: func() bool {
+				return true
+			},
+		}
+		w = nil
+		tw := Wallet()
+		if reflect.TypeOf(tw) != reflect.TypeOf(&wallet{}) {
+			t.Error("New wallet should return a new wallet instance")
+		}
+	})
+}
+
+func TestHasWalletFile(t *testing.T) {
+	f := layer{}
+	b := f.hasWalletFile()
+	if b == true {
+		t.Error("HasWalletFile should return false ")
+	}
+}
+
+func TestWriteFile(t *testing.T) {
+	f := layer{}
+	err := f.writeFile("", []byte(""), 0644)
+	if err == nil {
+		t.Error("WriteFile should return error")
+	}
+}
+
+func TestReadFile(t *testing.T) {
+	f := layer{}
+	_, err := f.readFile("test")
+	if err == nil {
+		t.Error("ReadFile should return error")
 	}
 }
