@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"fmt"
+	"io/fs"
 	"math/big"
 	"os"
 
@@ -17,16 +18,33 @@ const (
 	walletFileName string = "goblockchain.wallet"
 )
 
+type fileLayer interface {
+	hasWalletFile() bool
+	writeFile(name string, data []byte, perm fs.FileMode) error
+	readFile(name string) ([]byte, error)
+}
+
+type layer struct{}
+
 type wallet struct {
 	privateKey *ecdsa.PrivateKey
 	Address    string
 }
 
+var f fileLayer = layer{}
 var w *wallet
 
-func hasWalletFile() bool {
+func (layer) hasWalletFile() bool {
 	_, err := os.Stat(walletFileName)
 	return !os.IsNotExist(err)
+}
+
+func (layer) writeFile(name string, data []byte, perm fs.FileMode) error {
+	return os.WriteFile(name, data, perm)
+}
+
+func (layer) readFile(name string) ([]byte, error) {
+	return os.ReadFile(name)
 }
 
 func createPrivateKey() *ecdsa.PrivateKey {
@@ -38,12 +56,12 @@ func createPrivateKey() *ecdsa.PrivateKey {
 func persistKey(key *ecdsa.PrivateKey) {
 	bytes, err := x509.MarshalECPrivateKey(key)
 	utility.HandleError(err)
-	err = os.WriteFile(walletFileName, bytes, 0644)
+	err = f.writeFile(walletFileName, bytes, 0644)
 	utility.HandleError(err)
 }
 
 func restoreKey() *ecdsa.PrivateKey {
-	bytes, err := os.ReadFile(walletFileName)
+	bytes, err := f.readFile(walletFileName)
 	utility.HandleError(err)
 	privateKey, err := x509.ParseECPrivateKey(bytes)
 	utility.HandleError(err)
@@ -97,7 +115,7 @@ func Verify(signature, address, payload string) bool {
 func Wallet() *wallet {
 	if w == nil {
 		w = &wallet{}
-		if hasWalletFile() {
+		if f.hasWalletFile() {
 			w.privateKey = restoreKey()
 		} else {
 			key := createPrivateKey()
