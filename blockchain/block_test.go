@@ -3,6 +3,8 @@ package blockchain
 import (
 	"reflect"
 	"testing"
+
+	"github.com/hskim881028/goblockchain/utility"
 )
 
 func TestCreateBlock(t *testing.T) {
@@ -14,31 +16,31 @@ func TestCreateBlock(t *testing.T) {
 	}
 }
 
-// func TestGetBlock(t *testing.T) {
-// 	t.Run("Block not found", func(t *testing.T) {
-// 		dbStorage = fakeDB{
-// 			fakeGetBlock: func() []byte {
-// 				return nil
-// 			},
-// 		}
-// 		_, err := GetBlock("test")
-// 		if err == nil {
-// 			t.Error("GetBlock should not found")
-// 		}
-// 	})
+func TestGetBlock(t *testing.T) {
+	t.Run("Block not found", func(t *testing.T) {
+		dbStorage = fakeDB{
+			fakeGetBlock: func() []byte {
+				return nil
+			},
+		}
+		_, err := GetBlock("test")
+		if err == nil {
+			t.Error("GetBlock should not found")
+		}
+	})
 
-// 	t.Run("Block found", func(t *testing.T) {
-// 		dbStorage = fakeDB{
-// 			fakeGetBlock: func() []byte {
-// 				b := &Block{
-// 					Height: 1,
-// 				}
-// 				return utility.ToBytes(b)
-// 			},
-// 		}
-// 		block, _ := GetBlock("test")
-// 		if block.Height != 1 {
-// 			t.Error("GetBlock shout be found")
-// 		}
-// 	})
-// }
+	t.Run("Block found", func(t *testing.T) {
+		dbStorage = fakeDB{
+			fakeGetBlock: func() []byte {
+				b := &Block{
+					Height: 1,
+				}
+				return utility.ToBytes(b)
+			},
+		}
+		block, _ := GetBlock("test")
+		if block.Height != 1 {
+			t.Error("GetBlock shout be found")
+		}
+	})
+}
