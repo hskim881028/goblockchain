@@ -46,7 +46,7 @@ func requestAllBlocks(p *peer) {
 }
 
 func sendAllBlocks(p *peer) {
-	b := blockchain.Blocks(blockchain.Blockchain())
+	b := blockchain.GetBlocks(blockchain.Blockchain())
 	m := makeMessage(MessageAllBlocksResponse, b)
 	p.inbox <- m
 }

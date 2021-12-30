@@ -114,7 +114,7 @@ func loggerMiddleware(next http.Handler) http.Handler {
 func blocks(rw http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		utility.HandleError(json.NewEncoder(rw).Encode(blockchain.Blocks(blockchain.Blockchain())))
+		utility.HandleError(json.NewEncoder(rw).Encode(blockchain.GetBlocks(blockchain.Blockchain())))
 		return
 	case "POST":
 		block := blockchain.Blockchain().AddBlock()

@@ -32,7 +32,7 @@ const (
 )
 
 var b *blockchain
-var once sync.Once
+var chainOnce sync.Once
 var dbStorage storage = db.DB{}
 
 func (b *blockchain) restore(data []byte) {
@@ -98,7 +98,7 @@ func getDifficulty(b *blockchain) int {
 }
 
 func calculateDifficulty(b *blockchain) int {
-	blocks := Blocks(b)
+	blocks := GetBlocks(b)
 	newestBlcok := blocks[0]
 	lastCalculatedBlock := blocks[difficultyInterval-1]
 	actualTime := (newestBlcok.Timestamp / 60) - (lastCalculatedBlock.Timestamp / 60)
@@ -114,7 +114,7 @@ func calculateDifficulty(b *blockchain) int {
 
 func Txs(b *blockchain) []*Tx {
 	var txs []*Tx
-	for _, block := range Blocks(b) {
+	for _, block := range GetBlocks(b) {
 		txs = append(txs, block.Transactions...)
 	}
 	return txs
@@ -133,7 +133,7 @@ func UTxOutsByAddress(b *blockchain, address string) []*UTxOut {
 	var uTxOuts []*UTxOut
 	creatorTxs := make(map[string]bool)
 
-	for _, block := range Blocks(b) {
+	for _, block := range GetBlocks(b) {
 		for _, tx := range block.Transactions {
 			for _, input := range tx.TxIns {
 				if input.Signature == "COINBASE" {
@@ -176,7 +176,7 @@ func Status(b *blockchain, rw http.ResponseWriter) {
 	utility.HandleError(json.NewEncoder(rw).Encode(b))
 }
 
-func Blocks(b *blockchain) []*Block {
+func GetBlocks(b *blockchain) []*Block {
 	b.m.Lock()
 	defer b.m.Unlock()
 
@@ -195,7 +195,7 @@ func Blocks(b *blockchain) []*Block {
 }
 
 func Blockchain() *blockchain {
-	once.Do(func() {
+	chainOnce.Do(func() {
 		b = &blockchain{
 			Height: 0,
 		}
