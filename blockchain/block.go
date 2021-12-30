@@ -22,7 +22,7 @@ type Block struct {
 var ErrorNotFound = errors.New("block not found")
 
 func persistBlock(b *Block) {
-	db.SaveBlock(b.Hash, utility.ToBytes(b))
+	db.PutBlock(b.Hash, utility.ToBytes(b))
 }
 
 func (b *Block) restore(data []byte) {

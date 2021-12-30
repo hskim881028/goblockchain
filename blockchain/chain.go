@@ -48,7 +48,7 @@ func (b *blockchain) Replace(newBlocks []*Block) {
 	b.Height = len(newBlocks)
 
 	persistBlockChain(b)
-	db.ClearBlock()
+	db.DeleteAllBlocks()
 	for _, block := range newBlocks {
 		persistBlock(block)
 	}
@@ -75,7 +75,7 @@ func (b *blockchain) AddPeerBlock(newBlock *Block) {
 }
 
 func persistBlockChain(b *blockchain) {
-	db.SaveCheckpoint(utility.ToBytes(b))
+	db.PutChain(utility.ToBytes(b))
 }
 
 func getDifficulty(b *blockchain) int {
@@ -190,7 +190,7 @@ func Blockchain() *blockchain {
 		b = &blockchain{
 			Height: 0,
 		}
-		checkPoint := db.Checkpoint()
+		checkPoint := db.GetChain()
 		if checkPoint == nil {
 			b.AddBlock()
 		} else {
