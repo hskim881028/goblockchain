@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/hskim881028/goblockchain/db"
 	"github.com/hskim881028/goblockchain/utility"
 )
 
@@ -32,7 +33,7 @@ const (
 
 var b *blockchain
 var once sync.Once
-var dbStorage storage
+var dbStorage storage = db.DB{}
 
 func (b *blockchain) restore(data []byte) {
 	utility.FromBytes(b, data)
