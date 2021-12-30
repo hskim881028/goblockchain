@@ -34,15 +34,6 @@ func DB() *bolt.DB {
 	return db
 }
 
-func PutBlock(hash string, data []byte) {
-	err := DB().Update(func(t *bolt.Tx) error {
-		bucket := t.Bucket([]byte(blocksBucket))
-		err := bucket.Put([]byte(hash), data)
-		return err
-	})
-	utility.HandleError(err)
-}
-
 func GetBlock(hash string) []byte {
 	var data []byte
 	DB().View(func(t *bolt.Tx) error {
@@ -51,6 +42,15 @@ func GetBlock(hash string) []byte {
 		return nil
 	})
 	return data
+}
+
+func PutBlock(hash string, data []byte) {
+	err := DB().Update(func(t *bolt.Tx) error {
+		bucket := t.Bucket([]byte(blocksBucket))
+		err := bucket.Put([]byte(hash), data)
+		return err
+	})
+	utility.HandleError(err)
 }
 
 func DeleteAllBlocks() {
@@ -62,15 +62,6 @@ func DeleteAllBlocks() {
 	})
 }
 
-func PutChain(data []byte) {
-	err := DB().Update(func(t *bolt.Tx) error {
-		bucket := t.Bucket([]byte(dataBucket))
-		err := bucket.Put([]byte(checkpoint), data)
-		return err
-	})
-	utility.HandleError(err)
-}
-
 func GetChain() []byte {
 	var data []byte
 	DB().View(func(t *bolt.Tx) error {
@@ -79,6 +70,15 @@ func GetChain() []byte {
 		return nil
 	})
 	return data
+}
+
+func PutChain(data []byte) {
+	err := DB().Update(func(t *bolt.Tx) error {
+		bucket := t.Bucket([]byte(dataBucket))
+		err := bucket.Put([]byte(checkpoint), data)
+		return err
+	})
+	utility.HandleError(err)
 }
 
 func Close() {

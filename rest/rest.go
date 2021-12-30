@@ -127,7 +127,7 @@ func blocks(rw http.ResponseWriter, r *http.Request) {
 func block(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	hash := vars["hash"]
-	block, err := blockchain.FindBlock(hash)
+	block, err := blockchain.GetBlock(hash)
 	encoder := json.NewEncoder(rw)
 	if err == blockchain.ErrorNotFound {
 		utility.HandleError(encoder.Encode(errorResponse{fmt.Sprint(err)}))

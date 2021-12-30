@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hskim881028/goblockchain/db"
 	"github.com/hskim881028/goblockchain/utility"
 )
 
@@ -22,7 +21,7 @@ type Block struct {
 var ErrorNotFound = errors.New("block not found")
 
 func persistBlock(b *Block) {
-	db.PutBlock(b.Hash, utility.ToBytes(b))
+	dbStorage.PutBlock(b.Hash, utility.ToBytes(b))
 }
 
 func (b *Block) restore(data []byte) {
@@ -51,14 +50,14 @@ func createBlock(prevHash string, height, difficulty int) *Block {
 		Difficulty: difficulty,
 		Nonce:      0,
 	}
-	block.mine()
 	block.Transactions = Mempool().TxToConfirm()
+	block.mine()
 	persistBlock(block)
 	return block
 }
 
-func FindBlock(hash string) (*Block, error) {
-	blockBytes := db.GetBlock(hash)
+func GetBlock(hash string) (*Block, error) {
+	blockBytes := dbStorage.GetBlock(hash)
 	if blockBytes == nil {
 		return nil, ErrorNotFound
 	}

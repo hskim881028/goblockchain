@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/hskim881028/goblockchain/db"
 	"github.com/hskim881028/goblockchain/utility"
 )
 
@@ -14,6 +13,14 @@ type blockchain struct {
 	Height            int    `json:"height"`
 	CurrentDifficulty int    `json:"currentDifficulty"`
 	m                 sync.Mutex
+}
+
+type storage interface {
+	GetBlock(hash string) []byte
+	PutBlock(hash string, data []byte)
+	DeleteAllBlocks()
+	GetChain() []byte
+	PutChain(data []byte)
 }
 
 const (
@@ -25,6 +32,7 @@ const (
 
 var b *blockchain
 var once sync.Once
+var dbStorage storage
 
 func (b *blockchain) restore(data []byte) {
 	utility.FromBytes(b, data)
@@ -48,7 +56,7 @@ func (b *blockchain) Replace(newBlocks []*Block) {
 	b.Height = len(newBlocks)
 
 	persistBlockChain(b)
-	db.DeleteAllBlocks()
+	dbStorage.DeleteAllBlocks()
 	for _, block := range newBlocks {
 		persistBlock(block)
 	}
@@ -75,7 +83,7 @@ func (b *blockchain) AddPeerBlock(newBlock *Block) {
 }
 
 func persistBlockChain(b *blockchain) {
-	db.PutChain(utility.ToBytes(b))
+	dbStorage.PutChain(utility.ToBytes(b))
 }
 
 func getDifficulty(b *blockchain) int {
@@ -174,7 +182,7 @@ func Blocks(b *blockchain) []*Block {
 	var blocks []*Block
 	hashCursor := b.NewestHash
 	for {
-		block, _ := FindBlock(hashCursor)
+		block, _ := GetBlock(hashCursor)
 		blocks = append(blocks, block)
 		if block.PrevHash != "" {
 			hashCursor = block.PrevHash
@@ -190,7 +198,7 @@ func Blockchain() *blockchain {
 		b = &blockchain{
 			Height: 0,
 		}
-		checkPoint := db.GetChain()
+		checkPoint := dbStorage.GetChain()
 		if checkPoint == nil {
 			b.AddBlock()
 		} else {

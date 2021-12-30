@@ -34,7 +34,7 @@ func makeMessage(kind MessageKind, payload interface{}) []byte {
 }
 
 func sendNewestBlock(p *peer) {
-	block, err := blockchain.FindBlock(blockchain.Blockchain().NewestHash)
+	block, err := blockchain.GetBlock(blockchain.Blockchain().NewestHash)
 	utility.HandleError(err)
 	message := makeMessage(MessageNewestBlock, block)
 	p.inbox <- message
@@ -72,7 +72,7 @@ func handleMessage(m *Message, p *peer) {
 		fmt.Printf("Sending newest block to %s\n", p.key)
 		var payload blockchain.Block
 		utility.HandleError(json.Unmarshal(m.Playload, &payload))
-		b, err := blockchain.FindBlock(blockchain.Blockchain().NewestHash)
+		b, err := blockchain.GetBlock(blockchain.Blockchain().NewestHash)
 		utility.HandleError(err)
 		if payload.Height >= b.Height {
 			fmt.Printf("Requesting all the blocks from %s", p.key)
